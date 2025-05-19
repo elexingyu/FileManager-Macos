@@ -18,18 +18,34 @@ import os
 import subprocess
 import random
 import hashlib
-import windnd
+import platform
+
+# 根据操作系统平台决定是否导入windnd
+is_windows = platform.system() == 'Windows'
+if is_windows:
+    import windnd
 
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
 from conf import my_api, settings
-from core import common_utils, image_utils, search_utils, syn_utils, video_utils
+from core import common_utils, image_utils, search_utils, syn_utils, video_utils, ui_utils
 from core.logger import logger
+from core.ui_utils import safe_showinfo
 
 
 mutex = threading.Lock()  # 创建互斥锁
 running_task = []  # 正在进行的任务 用于关闭程序时提醒
+
+
+def setup_drag_drop(widget, callback):
+    """设置拖放功能，兼容Windows和macOS"""
+    if is_windows:
+        windnd.hook_dropfiles(widget, func=callback)  # Windows环境使用windnd
+    else:
+        # macOS环境下不支持文件拖放，记录日志提示用户
+        logger.warning("文件拖放功能在非Windows环境下不可用，请使用'浏览'按钮选择文件。")
+        # 这里可以添加macOS下的替代拖放实现，如TkDND等，暂时不实现
 
 
 def deal_running_task_arg(task_info):
@@ -433,7 +449,7 @@ class FindSameFrame(BaseFrame):
         self.btn_restore.grid(row=0, column=1)
         self.btn_undo_restore = ttk.Button(self.f_bottom, text="撤销还原", command=self.undoRestoreFiles, state=tk.DISABLED)
         self.btn_undo_restore.grid(row=0, column=2)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     @dragged_locked
     def dragged_files(self, files):
@@ -601,7 +617,7 @@ class FindSameByHashFrame(BaseFrame):
         self.btn_showSameRecord.grid(row=8, column=3, pady=10)
         self.btn_showFailedRecord = ttk.Button(self.f_bottom, text="查看操作失败记录", command=self.showfailedRecord, state=tk.DISABLED)
         self.btn_showFailedRecord.grid(row=8, column=4, pady=10)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def clear(self):
         """清空信息"""
@@ -1424,7 +1440,7 @@ class SynFrame(BaseFrame):
         self.proStateLabel = ttk.Label(self.f_bottom, text='')  # 用于显示程序总运行状态
         self.proStateLabel.grid(row=2, column=4, sticky=tk.W)
         self.invoke_item()  # 设置各选择或输入组件状态
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
 
 class RestoreFrame(BaseFrame):
@@ -1452,7 +1468,7 @@ class RestoreFrame(BaseFrame):
         scrolH = 45
         self.scr = scrolledtext.ScrolledText(self.f_content, width=scrolW, height=scrolH, wrap=tk.WORD)
         self.scr.grid(row=0, sticky=tk.NSEW)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def selectPath(self):
         path_ = askopenfilename()
@@ -1554,7 +1570,7 @@ class CleanEmptyDirFrame(BaseFrame):
         scrolH = 45
         self.scr = scrolledtext.ScrolledText(self.f_content, width=scrolW, height=scrolH, wrap=tk.WORD)
         self.scr.grid(row=0, sticky=tk.NSEW)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     @deal_running_task_arg('清除空文件夹')
     def deal_clear_empty_dir(self, dir_path):
@@ -1860,7 +1876,7 @@ class SearchFrame(BaseFrame):
         ttk.Button(self.f_bottom_option2, text="文件覆盖风险检测", command=self.check_files_overwrite).grid(row=4, column=3,sticky=tk.E)
         ttk.Button(self.f_bottom_option2, text="导出", command=self.run).grid(row=4, column=4)
         self.invoke_filter_time()  # 设置时间过滤组件激活状态
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def chg_search_mode(self):
         """用于修改不同搜索模式的输入组件"""
@@ -2698,7 +2714,7 @@ class SearchFrame(BaseFrame):
             msg = "未找到匹配 %s 的文件和目录!" % search_str
         self.scr.insert('end', "\n%s\n" % msg)
         self.scr.see('end')
-        mBox.showinfo("任务完成", "搜索-操作文件完成!")
+        safe_showinfo("任务完成", "搜索-操作文件完成!", self.scr)
 
     def run(self):
         """为操作文件新开一个线程,避免高耗时操作阻塞GUI主线程"""
@@ -2752,7 +2768,7 @@ class CopyDirTreeFrame(BaseFrame):
         scrolH = 40
         self.scr = scrolledtext.ScrolledText(self.f_content, width=scrolW, height=scrolH, wrap=tk.WORD)
         self.scr.grid(row=0, sticky=tk.NSEW)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     @deal_running_task_arg('拷贝目录结构')
     def copyDirTree(self):
@@ -2897,7 +2913,7 @@ class CompareTxtFrame(BaseFrame):
         self.scr.grid(row=0, sticky=tk.NSEW)
         self.btn_show = ttk.Button(self.f_bottom, text="查看详情", command=self.showDiff, state=tk.DISABLED)
         self.btn_show.grid(row=0, pady=10)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def chg_wrapcolumn(self):
         """激活修改HTML结果页面行宽输入框"""
@@ -3352,7 +3368,7 @@ class CalHashFrame(BaseFrame):
         self.scr.grid(row=0, sticky=tk.NSEW)
         ttk.Entry(self.f_bottom, textvariable=self.search_str, width=110).grid(row=2, column=1, sticky=tk.EW, pady=5)
         ttk.Button(self.f_bottom, text="查找", command=self.search).grid(row=2, column=2, sticky='E')
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
 
 class RenameFrame(BaseFrame):
@@ -4141,7 +4157,7 @@ class RenameFrame(BaseFrame):
         self.scr2 = scrolledtext.ScrolledText(self.f_content, width=scrolW, height=scrolH, wrap=tk.WORD)
         self.scr2.grid(column=1, row=2, sticky=tk.NSEW)
         self.invoke_entry()  # 设置输入框状态
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def invoke_ingorecase(self):
         """激活忽略大小写单选框"""
@@ -4294,7 +4310,7 @@ class GetImgFrame(BaseFrame):
         self.btn_show.grid(row=0, column=0, pady=10)
         self.invoke_type()  # 设置限定帧输入框状态
         self.invoke_num()  # 设置帧数秒数输入框状态
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def invoke_num(self):
         """激活输入帧数或者秒数输入框"""
@@ -4514,7 +4530,7 @@ class CalImgSimFrame(BaseFrame):
         self.btn_restore.grid(row=0, column=1, pady=10)
         self.btn_undo_restore = ttk.Button(self.f_bottom, text="撤销还原", command=self.undoRestoreFiles, state=tk.DISABLED)
         self.btn_undo_restore.grid(row=0, column=2)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     @dragged_locked
     def dragged_files(self, files):
@@ -4614,7 +4630,7 @@ class CalVideoSimFrame(BaseFrame):
         self.btn_restore.grid(row=0, column=1, pady=10)
         self.btn_undo_restore = ttk.Button(self.f_bottom, text="撤销还原", command=self.undoRestoreFiles, state=tk.DISABLED)
         self.btn_undo_restore.grid(row=0, column=2)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     @dragged_locked
     def dragged_files(self, files):
@@ -4727,7 +4743,7 @@ class SearchImgFrame(BaseFrame):
         self.btn_restore.grid(row=0, column=1, pady=10)
         self.btn_undo_restore = ttk.Button(self.f_bottom, text="撤销还原", command=self.undoRestoreFiles, state=tk.DISABLED)
         self.btn_undo_restore.grid(row=0, column=2)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     @dragged_locked
     def dragged_files(self, files):
@@ -4842,7 +4858,7 @@ class SearchVideoFrame(BaseFrame):
         self.btn_restore.grid(row=0, column=1, pady=10)
         self.btn_undo_restore = ttk.Button(self.f_bottom, text="撤销还原", command=self.undoRestoreFiles, state=tk.DISABLED)
         self.btn_undo_restore.grid(row=0, column=2)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     @dragged_locked
     def dragged_files(self, files):
@@ -4998,7 +5014,7 @@ class GetAudioFrame(BaseFrame):
         self.btn_show = ttk.Button(self.f_bottom, text="查看结果", command=self.showFiles, state=tk.DISABLED)
         self.btn_show.grid(row=0, column=0, pady=10)
         self.invoke_time()  # 设置时间输入框锁定状态
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def clear_time_input(self):
         """清除时间输入框内容"""
@@ -5354,7 +5370,7 @@ class VideoCutFrame(BaseFrame):
         scrolH = 41
         self.scr = scrolledtext.ScrolledText(self.f_content, width=scrolW, height=scrolH, wrap=tk.WORD)
         self.scr.grid(column=0, row=2, sticky=tk.NSEW)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def invoke_type(self):
         """激活视频格式输入框"""
@@ -5718,7 +5734,7 @@ class TimestampFrame(BaseFrame):
         self.scr.grid(column=0, row=1, sticky=tk.NSEW)
         self.invoke_timecheckbtn()  # 刷新时间戳复选框状态
         self.invoke_offset()  # 刷新时间偏移选项框状态
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def selectPath(self):
         file_path = askopenfilename()
@@ -6262,7 +6278,7 @@ class ImageProcessingFrame(BaseFrame):
         self.invoke_image_type_input()
         self.btn_show = ttk.Button(self.f_bottom, text="查看结果", command=self.showFiles, state=tk.DISABLED)
         self.btn_show.grid(row=0, column=0, pady=10)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     @dragged_locked
     def dragged_files(self, files):
@@ -6487,7 +6503,7 @@ class TxtEncodeFrame(BaseFrame):
         self.invoke_encode_type_input()
         self.btn_show = ttk.Button(self.f_bottom, text="查看结果", command=self.showFiles, state=tk.DISABLED)
         self.btn_show.grid(row=0, column=0, pady=10)
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     @dragged_locked
     def dragged_files(self, files):
@@ -6802,7 +6818,7 @@ class FileArrangeFrame(BaseFrame):
         self.btn_undo_restore = ttk.Button(self.f_bottom_option2, text="撤销还原", command=self.undoRestoreFiles, state=tk.DISABLED)
         self.btn_undo_restore.grid(row=0, column=2)
         self.chg_search_mode()  # 设置选项下拉框值
-        windnd.hook_dropfiles(self, func=self.dragged_files)  # 监听文件拖拽操作
+        setup_drag_drop(self, self.dragged_files)  # 监听文件拖拽操作
 
     def chg_search_mode(self):
         """用于修改不同模式的输入组件"""

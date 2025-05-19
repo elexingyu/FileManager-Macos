@@ -7,5 +7,3 @@ openpyxl==3.1.2
 pillow==10.3.0
 pillow_heif==0.16.0
 pymediainfo==6.1.0
-pywin32==306
-windnd==1.0.7

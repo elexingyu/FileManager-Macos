@@ -1,12 +1,17 @@
 # 扩展工具模块，存放一些引用第三方库的函数代码
 import time
 import os
+import platform
 from datetime import datetime
-from win32file import CreateFile, SetFileTime, GetFileTime, CloseHandle, CreateDirectory
-from win32file import GENERIC_READ, GENERIC_WRITE, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS
-import win32api
-import win32timezone  # 若源码不导入，则pyinstaller打包时不会打包该模块，会导致运行修改时间戳函数时缺少该模块而报错
 import openpyxl
+
+# 仅在Windows系统上导入win32相关模块
+is_windows = platform.system() == 'Windows'
+if is_windows:
+    from win32file import CreateFile, SetFileTime, GetFileTime, CloseHandle, CreateDirectory
+    from win32file import GENERIC_READ, GENERIC_WRITE, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS
+    import win32api
+    import win32timezone  # 若源码不导入，则pyinstaller打包时不会打包该模块，会导致运行修改时间戳函数时报错
 
 
 def get_timestr(timestamp):
@@ -23,6 +28,14 @@ def modifyFileTimeByTimestamp(path, createTimestamp, modifyTimestamp, accessTime
     :param accessTimestamp: 访问时间戳
     :param
     """
+    if not is_windows:
+        # 在macOS/Linux上使用os.utime修改访问和修改时间
+        try:
+            os.utime(path, (accessTimestamp, modifyTimestamp))
+            return True
+        except:
+            return False
+    
     try:
         # 在CreateFile中仅需传入额外的标志位FILE_FLAG_BACKUP_SEMANTICS即可打开目录。在经过测试也的确能够使用CreateFile打开目录并用SetFileTime对其设置时间。
         # 官方文档 https://learn.microsoft.com/zh-cn/windows/win32/api/fileapi/nf-fileapi-createfilea#Directories
@@ -51,6 +64,9 @@ def timeOffsetAndStruct(times, format, offset):
 
 def getFileVersion(file_name):
     """获取文件版本号"""
+    if not is_windows:
+        return "仅Windows系统支持此功能"
+        
     info = win32api.GetFileVersionInfo(file_name, os.sep)
     ms = info['FileVersionMS']
     ls = info['FileVersionLS']

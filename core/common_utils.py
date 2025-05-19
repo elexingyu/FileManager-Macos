@@ -12,15 +12,18 @@ import mimetypes
 import exifread
 import filetype
 import chardet
+import platform
 from decimal import Decimal
 from PIL import Image
 from pymediainfo import MediaInfo
 
 
-# 开启静默模式不弹cmd窗口
-startupinfo = subprocess.STARTUPINFO()
-startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
-startupinfo.wShowWindow = subprocess.SW_HIDE
+# 开启静默模式不弹cmd窗口 (仅Windows系统)
+startupinfo = None
+if platform.system() == 'Windows':
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = subprocess.SW_HIDE
 
 
 def my_init():
@@ -1312,7 +1315,10 @@ def get_media_meta_by_ffmpeg(file, ffmpeg_path=settings.FFMPEG_PATH):
     # startupinfo = subprocess.STARTUPINFO()
     # startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
     # startupinfo.wShowWindow = subprocess.SW_HIDE
-    process = subprocess.Popen([ffmpeg_path, '-i', file], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, startupinfo=startupinfo)
+    if platform.system() == 'Windows' and startupinfo is not None:
+        process = subprocess.Popen([ffmpeg_path, '-i', file], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, startupinfo=startupinfo)
+    else:
+        process = subprocess.Popen([ffmpeg_path, '-i', file], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout, stderr = process.communicate()
     pattern_duration = re.compile(r"Duration:\s(\d+?):(\d+?):(\d+\.\d+?),")
     pattern_size = re.compile(r",\s(\d{3,4})x(\d{3,4})")
@@ -1715,6 +1721,9 @@ def get_image_from_video_by_ffmpeg(pathIn='', pathOut='', extract_time_point='0'
     # 提取视频帧图像
     # command = [ffmpeg_path, '-ss', extract_time_point, '-i', pathIn, '-frames:v', '1', pathOut]
     command = [settings.FFMPEG_PATH, '-ss', str(extract_time_point), '-i', pathIn, '-frames:v', '1', pathOut]  # 命令
-    subprocess.call(command, shell=True)
+    if platform.system() == 'Windows' and startupinfo is not None:
+        subprocess.call(command, shell=True, startupinfo=startupinfo)
+    else:
+        subprocess.call(command, shell=True)
 
 

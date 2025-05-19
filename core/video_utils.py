@@ -6,11 +6,16 @@ import os
 import time
 import subprocess
 import threading
+import platform
 from tkinter import messagebox as mBox
-# 开启静默模式不弹cmd窗口
-startupinfo = subprocess.STARTUPINFO()
-startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
-startupinfo.wShowWindow = subprocess.SW_HIDE
+from core.ui_utils import safe_showinfo
+
+# 开启静默模式不弹cmd窗口（仅Windows系统）
+startupinfo = None
+if platform.system() == 'Windows':
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = subprocess.SW_HIDE
 
 
 def millisecToAssFormat(t):  # 取时间
@@ -62,7 +67,10 @@ def get_img_thread(path_list, src_path, dst_path, extract_time_point, continue_f
             # command = [settings.FFMPEG_PATH, '-ss', str(extract_time), '-i', pathIn, '-frames:v', '1', pathOut]  # 命令
             command = [settings.FFMPEG_PATH, '-y', '-ss', str(extract_time), '-i', pathIn, '-frames:v', '1', pathOut]  # 命令
             # print(command)
-            subprocess.call(command, shell=True)
+            if platform.system() == 'Windows' and startupinfo is not None:
+                subprocess.call(command, shell=True, startupinfo=startupinfo)
+            else:
+                subprocess.call(command, shell=True)
         except Exception as e:
             logger.error('提取 %s 出错,error: %s' % (pathOut, e))
             failed_list.append(pathIn)
@@ -266,7 +274,7 @@ def find_sim_video(self, src_dir_path, dst_dir_path, extract_time_point, continu
     if self.record_path:
         self.btn_restore.config(state='normal')
     self.btn_show.config(state='normal')
-    mBox.showinfo("任务完成", "查找相似视频完成!")
+    safe_showinfo("任务完成", "查找相似视频完成!", self.scr)
 
 
 def search_video(self, eg_dir_path, src_dir_path, save_dir_path, extract_time_point, continue_flag, threshold, deal_video_mode, db_flag):
@@ -298,7 +306,7 @@ def search_video(self, eg_dir_path, src_dir_path, save_dir_path, extract_time_po
     if self.record_path:
         self.btn_restore.config(state='normal')
     self.btn_show.config(state='normal')
-    mBox.showinfo("任务完成", "以视频搜相似视频完成!")
+    safe_showinfo("任务完成", "以视频搜相似视频完成!", self.scr)
 
 
 def get_img_from_video_by_ffmpeg(pathIn='', pathOut='', extract_time_point=0, continue_flag=False):
@@ -332,5 +340,8 @@ def get_img_from_video_by_ffmpeg(pathIn='', pathOut='', extract_time_point=0, co
         # 提取视频帧图像
         # command = [ffmpeg_path, '-ss', extract_time_point, '-i', pathIn, '-frames:v', '1', pathOut]
         command = [settings.FFMPEG_PATH, '-y', '-ss', str(extract_time_point), '-i', pathIn, '-frames:v', '1', pathOut]  # 命令
-        subprocess.call(command, shell=True)
+        if platform.system() == 'Windows' and startupinfo is not None:
+            subprocess.call(command, shell=True, startupinfo=startupinfo)
+        else:
+            subprocess.call(command, shell=True)
 

@@ -1,0 +1,54 @@
+# Python相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 虚拟环境
+venv/
+ENV/
+.env
+.venv
+env/
+
+# IDE相关
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# 日志文件
+*.log
+
+# 数据库文件
+*.db
+*.sqlite3
+
+# 本地配置文件
+local_settings.py
+
+# 其他
+.DS_Store
+Thumbs.db
+
+Record/

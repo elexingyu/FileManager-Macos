@@ -14,6 +14,9 @@ from PIL.JpegImagePlugin import JpegImageFile
 from pillow_heif import register_heif_opener
 register_heif_opener()
 
+# 导入安全消息框显示函数
+from core.ui_utils import safe_showinfo
+
 
 # 计算图片的局部哈希值--pHash
 def phash(img_path):
@@ -495,7 +498,7 @@ def find_sim_img(self, src_dir, dst_dir, threshold, deal_img_mode, db_flag):
     if self.record_path:
         self.btn_restore.config(state='normal')
     self.btn_show.config(state='normal')
-    mBox.showinfo("任务完成", "查找相似图片完成!")
+    safe_showinfo("任务完成", "查找相似图片完成!", self.scr)
 
 
 def search_img_by_img(self, eg_dir, src_dir, dst_dir, threshold, deal_img_mode, db_flag):
@@ -534,7 +537,7 @@ def search_img_by_img(self, eg_dir, src_dir, dst_dir, threshold, deal_img_mode, 
     if self.record_path:
         self.btn_restore.config(state='normal')
     self.btn_show.config(state='normal')
-    mBox.showinfo("任务完成", "以图搜图完成!")
+    safe_showinfo("任务完成", "以图搜图完成!", self.scr)
 
 
 def move_files(deal_file_mode, new_old_record, save_dir_path):

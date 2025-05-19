@@ -18,7 +18,7 @@
 -  批量重命名 
 -  视频截取（用于截取视频片段，也可以批量对目录下的视频进行裁剪）
 -  音频处理（用于从视频中提取音频、从音频中提取音频片段、转换音频格式）
--  图片处理（“WEBP转JPG”、“HEIC转JPG”以及其他常用图片格式转换） 
+-  图片处理（"WEBP转JPG"、"HEIC转JPG"以及其他常用图片格式转换） 
 -  文本编码转换（检索指定编码的文本，转换文本编码格式，Windows(CRLF) 与 Unix(LF)转换）
 -  获取时间戳（时间与时间戳之间相互转换）、修改文件的时间戳、识别文件MIME数据类型、读取图片EXIF数据、视频和音频元数据并导出excel表格，修改照片、视频的时间戳为拍摄时间
 
@@ -33,25 +33,44 @@
 
 # 运行方式:
 
-## 方式一： 运行源码
+## 方式一： 从GitHub获取源码并运行
 
-    注意：运行源码如果不是在pycharm中运行，项目所有代码目录下都要新建一个空白__init__.py文件（python包与模块的概念）
-    1.程序所需第三方包windnd, natsort, pywin32, pillow, pillow_heif, exifread, filetype, chardet, pymediainfo
-    安装方式 pip install xxxx
-    2.进入bin目录
-    运行方式 python filemanager.py
-  
+1. 克隆仓库到本地
+
+```bash
+git clone https://github.com/用户名/FileManager.git
+cd FileManager
+```
+
+2. 安装所需依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+3. 运行程序
+
+```bash
+cd bin
+python filemanager.py
+```
+
+### macOS系统特别说明
+macOS用户可直接按照上述步骤操作。
 
 
-## 方式二： 运行打包好的exe
-1. 直接下载打包好的filemanager.zip 
+## 方式二： Windows系统可直接使用打包好的exe
+
+1. 直接从Releases页面下载打包好的filemanager.zip
+   https://github.com/用户名/FileManager/releases
+
 2. 解压后运行目录下的filemanager.exe 即可
-  
 
 
 # 注意事项:
 - 除非必要否则不要轻易修改设置内容
 - 数据无价，谨慎操作！
+
   
 
 
@@ -162,7 +181,7 @@
 8. **操作顺序**
     1. 输入路径、搜索语句，设置操作模式和搜索模式
     2. 点击搜索按钮，搜索符合条件的文件/目录
-    3. 选择重命名模式，输入重命名模型或字符串，点击“预览”按钮，预览重命名效果
+    3. 选择重命名模式，输入重命名模型或字符串，点击"预览"按钮，预览重命名效果
     4. 点击重命名按钮，执行重命名操作
 
 
